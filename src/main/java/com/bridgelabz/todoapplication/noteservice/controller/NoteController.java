@@ -160,7 +160,7 @@ public class NoteController {
 	/**
 	 * @param noteId
 	 * @param req
-	 * <p><b>To take pinNote url and request body or request param and also take token from view and perform operations</b></p>
+	 * <p><b>To take pinnote url and request body or request param and also take token from view and perform operations</b></p>
 	 * @return response
 	 * @throws ToDoExceptions 
 	 */
@@ -172,7 +172,25 @@ public class NoteController {
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
 	}
-	/******************************************************************************************************/
+	
+	
+	
+	/**
+	 * @param request
+	 * @param noteId
+	 * <p><b>To take unpinnote url and request param and also take token from view and perform operations</b></p>
+	 * @return response
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@PutMapping("/unpinnote")
+	public ResponseEntity<ResponseDTO> unpinNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());	
+		noteService.unpinNote(request.getHeader("token"),noteId);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
+	}
+	
 	/**
 	 * @param noteId
 	 * @param req
@@ -266,7 +284,7 @@ public class NoteController {
 	 * @throws ParseException
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@PutMapping("/addlabel")
+	@PutMapping("/addlabel/{noteId}")
 	public ResponseEntity<ResponseDTO> addlabels(HttpServletRequest request,@PathVariable(value="noteId")String noteId ,@RequestBody List<String>labels) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
 		noteService.addlabels(request.getHeader("token"), noteId,labels);

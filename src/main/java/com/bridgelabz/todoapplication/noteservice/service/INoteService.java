@@ -134,6 +134,14 @@ public interface INoteService {
 	 */
 	void createLabels(String token, String lableName) throws ToDoExceptions;
 
+	/**
+	 * @param header
+	 * @param noteId
+	 *<p><b>To unpin note in todo application</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void unpinNote(String header, String noteId) throws ToDoExceptions;
+
 	
 	
 

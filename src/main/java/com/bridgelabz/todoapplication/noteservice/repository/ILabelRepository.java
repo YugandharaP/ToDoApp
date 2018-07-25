@@ -1,12 +1,12 @@
 package com.bridgelabz.todoapplication.noteservice.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import com.bridgelabz.todoapplication.noteservice.model.Label;
+
 
 /**@since 23/07/2018
  * <p><b></b></p>
@@ -24,12 +24,12 @@ public interface ILabelRepository extends MongoRepository<Label, String> {
 	 */
 	Optional<Label> findByLabelName(String labelName);
 
-
 	/**
-	 * @param noteList
-	 * <p><b>To find all notes from not list</b></p>
-	 * @return
+	 * @param userId
+	 * @param string
+	 * <p><b>To find by userId and name of label from not list</b></p>
+	 * @return list
 	 */
-	List<String> findAllByNoteList(List<String> noteList);
+	Label findByUserIdAndLabelName(String userId, String string);
 
 }
