@@ -4,14 +4,12 @@ import java.util.Optional;
 
 import javax.mail.MessagingException;
 
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.bridgelabz.todoapplication.noteservice.model.Note;
 import com.bridgelabz.todoapplication.securityservice.JwtTokenProvider;
 import com.bridgelabz.todoapplication.userservice.model.Email;
 import com.bridgelabz.todoapplication.userservice.model.User;
@@ -49,9 +47,6 @@ public class UserServiceImplementation implements IUserService {
 	@Autowired
 	ModelMapperService modelMapper;
 
-	/*@Autowired
-	RedisService redisService;*/
-
 	/**
 	 * @param logindto
 	 *            <p>
@@ -75,13 +70,9 @@ public class UserServiceImplementation implements IUserService {
 			throw new ToDoExceptions("Wrong Password given");
 		}
 			User user = optionalUser.get();
-		//	String userId = user.getId();
-		//	LOGGER.info(userId);
 			JwtTokenProvider token = new JwtTokenProvider();
 			String validToken = token.generator(user);
 			LOGGER.info("token : " + validToken);
-			//redisService.setToken(userId, validToken);
-			//LOGGER.info("redis work");
 			return validToken;
 	}
 

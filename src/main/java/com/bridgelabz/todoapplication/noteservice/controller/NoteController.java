@@ -22,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bridgelabz.todoapplication.noteservice.model.Note;
 import com.bridgelabz.todoapplication.noteservice.model.NoteDTO;
 import com.bridgelabz.todoapplication.noteservice.service.INoteService;
+import com.bridgelabz.todoapplication.securityservice.JwtTokenProvider;
 import com.bridgelabz.todoapplication.utilservice.dto.ResponseDTO;
 import com.bridgelabz.todoapplication.utilservice.exceptions.RestPreconditions;
 import com.bridgelabz.todoapplication.utilservice.exceptions.ToDoExceptions;
+import com.bridgelabz.todoapplication.utilservice.redisservice.IRedisRepository;
 
 /**
  * @author yuga
@@ -42,6 +44,11 @@ public class NoteController {
 	private Logger logger = LoggerFactory.getLogger(NoteController.class);
 	@Autowired
 	INoteService noteService;
+	
+	@Autowired
+	IRedisRepository iRedisRepository;
+	@Autowired
+	JwtTokenProvider tokenProvider;
 
 	/**
 	 * @param token
@@ -55,7 +62,20 @@ public class NoteController {
 	@PostMapping("/createnote")
 	public ResponseEntity<ResponseDTO> createNote(HttpServletRequest request ,@RequestBody NoteDTO notedto) throws ToDoExceptions, ParseException {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.createNote(notedto, request.getHeader("token"));
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.createNote(notedto, tokenFromHeader);
 		logger.info(RESPONSE_ID+request.getRequestURI());
 		return new ResponseEntity("Note successfully created.", HttpStatus.OK);
 	}
@@ -71,7 +91,20 @@ public class NoteController {
 	@GetMapping("/readnote")
 	public ResponseEntity<ResponseDTO> readNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 			logger.info(REQUEST_ID+request.getRequestURI());
-			Note note = noteService.readNote(noteId, request.getHeader("token"));
+			
+			String tokenFromHeader = request.getHeader("token");
+			String userId= tokenProvider.parseJWT(tokenFromHeader);
+			logger.info(tokenFromHeader);
+			String tokenFromRedis = iRedisRepository.getToken(userId);
+			logger.info(tokenFromRedis);
+			if(!tokenFromHeader.equals(tokenFromRedis))
+			{
+				logger.info("Token not matched");
+				
+				throw new ToDoExceptions("Token not matched");
+			}
+			
+			Note note = noteService.readNote(noteId, tokenFromHeader);
 			logger.info(RESPONSE_ID+request.getRequestURI());
 			return new ResponseEntity(note, HttpStatus.OK);
 	}
@@ -86,7 +119,20 @@ public class NoteController {
 	@GetMapping("/readallnotes")
 	public ResponseEntity<ResponseDTO> readAllNotes(HttpServletRequest request) throws ToDoExceptions {
 			logger.info(REQUEST_ID+request.getRequestURI());	
-			List<Note> note = noteService.readAllNotes(request.getHeader("token"));
+			
+			String tokenFromHeader = request.getHeader("token");
+			String userId= tokenProvider.parseJWT(tokenFromHeader);
+			logger.info(tokenFromHeader);
+			String tokenFromRedis = iRedisRepository.getToken(userId);
+			logger.info(tokenFromRedis);
+			if(!tokenFromHeader.equals(tokenFromRedis))
+			{
+				logger.info("Token not matched");
+				
+				throw new ToDoExceptions("Token not matched");
+			}
+			
+			List<Note> note = noteService.readAllNotes(tokenFromHeader);
 			logger.info(RESPONSE_ID+request.getRequestURI());
 			return new ResponseEntity(note, HttpStatus.OK);
 	}
@@ -102,7 +148,20 @@ public class NoteController {
 	@PutMapping("/updatenote")
 	public ResponseEntity<ResponseDTO> updateNote(HttpServletRequest request,@RequestBody NoteDTO notedto) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.updateNote(notedto, request.getHeader("token"));
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.updateNote(notedto, tokenFromHeader);
 		logger.info(RESPONSE_ID+request.getRequestURI());
 		return new ResponseEntity("Note has been updated successfully", HttpStatus.OK);
 	}
@@ -118,7 +177,20 @@ public class NoteController {
 	@PutMapping("/deletenote/{noteId}")
 	public ResponseEntity<ResponseDTO> deleteNote(HttpServletRequest request,@PathVariable(value="noteId") String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		RestPreconditions.checkNotNull(noteService.deleteNote(noteId, request.getHeader("token")),"Exception in delete ");
+	
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		RestPreconditions.checkNotNull(noteService.deleteNote(noteId, tokenFromHeader),"Exception in delete ");
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Note has been deleted successfully.", HttpStatus.OK);
 	}
@@ -134,9 +206,21 @@ public class NoteController {
 	@DeleteMapping("/permanentdelete")
 	public ResponseEntity<ResponseDTO> deleteNoteFromTrash(HttpServletRequest request,@RequestParam String noteId,
 			HttpServletRequest req) throws ToDoExceptions {
-			//String token = req.getHeader("token");
-		logger.info(REQUEST_ID+request.getRequestURI());
-			noteService.deleteNoteFromTrash(noteId, request.getHeader("token"));
+			logger.info(REQUEST_ID+request.getRequestURI());
+			
+			String tokenFromHeader = request.getHeader("token");
+			String userId= tokenProvider.parseJWT(tokenFromHeader);
+			logger.info(tokenFromHeader);
+			String tokenFromRedis = iRedisRepository.getToken(userId);
+			logger.info(tokenFromRedis);
+			if(!tokenFromHeader.equals(tokenFromRedis))
+			{
+				logger.info("Token not matched");
+				
+				throw new ToDoExceptions("Token not matched");
+			}
+			
+			noteService.deleteNoteFromTrash(noteId, tokenFromHeader);
 			logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been permanently deleted.", HttpStatus.OK);
 	}
@@ -152,7 +236,20 @@ public class NoteController {
 	@PutMapping("/restorefromtrash")
 	public ResponseEntity<ResponseDTO> restoreNoteFromTrash(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());	
-		noteService.restoreNoteFromTrash(noteId, request.getHeader("token"));
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.restoreNoteFromTrash(noteId, tokenFromHeader);
 			logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been restore.", HttpStatus.OK);
 	}
@@ -168,7 +265,20 @@ public class NoteController {
 	@PutMapping("/pinnote")
 	public ResponseEntity<ResponseDTO> pinNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());	
-		noteService.pinNote(request.getHeader("token"),noteId);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.pinNote(tokenFromHeader,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
 	}
@@ -186,7 +296,20 @@ public class NoteController {
 	@PutMapping("/unpinnote")
 	public ResponseEntity<ResponseDTO> unpinNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());	
-		noteService.unpinNote(request.getHeader("token"),noteId);
+
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.unpinNote(tokenFromHeader,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
 	}
@@ -202,6 +325,19 @@ public class NoteController {
 	@PutMapping("/archivenote")
 	public ResponseEntity<ResponseDTO> archiveNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());	
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
 		noteService.archiveNote(request.getHeader("token"),noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note in archive", HttpStatus.OK);
@@ -219,7 +355,20 @@ public class NoteController {
 	@PutMapping("/remindme")
 	public ResponseEntity<ResponseDTO> remindMe(HttpServletRequest request,@RequestParam String noteId , @RequestBody String reminderDate) throws ToDoExceptions, ParseException {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.reminderNote(request.getHeader("token"),noteId, reminderDate);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.reminderNote(tokenFromHeader,noteId, reminderDate);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Reminder added on your note successfully", HttpStatus.OK);
 	}
@@ -236,7 +385,21 @@ public class NoteController {
 	@PutMapping("/removereminder")
 	public ResponseEntity<ResponseDTO> removeReminder(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions, ParseException {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.removeReminder(request.getHeader("token"),noteId);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		
+		noteService.removeReminder(tokenFromHeader,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Reminder added on your note successfully", HttpStatus.OK);
 	}
@@ -253,7 +416,20 @@ public class NoteController {
 	@PutMapping("/addcolor")
 	public ResponseEntity<ResponseDTO> addColor(HttpServletRequest request,@RequestBody NoteDTO notedto) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.addColor(request.getHeader("token"), notedto);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.addColor(tokenFromHeader, notedto);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("color added successfully", HttpStatus.OK);
 	}
@@ -270,7 +446,20 @@ public class NoteController {
 	@PostMapping("/createlabel")
 	public ResponseEntity<ResponseDTO> createLabels(HttpServletRequest request,@RequestParam(value="Label")String labelName) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.createLabels(request.getHeader("token"), labelName);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.createLabels(tokenFromHeader, labelName);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Label created successfully", HttpStatus.OK);
 	}
@@ -287,7 +476,20 @@ public class NoteController {
 	@PutMapping("/addlabel/{noteId}")
 	public ResponseEntity<ResponseDTO> addlabels(HttpServletRequest request,@PathVariable(value="noteId")String noteId ,@RequestBody List<String>labels) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());
-		noteService.addlabels(request.getHeader("token"), noteId,labels);
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.addlabels(tokenFromHeader, noteId,labels);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Label added successfully", HttpStatus.OK);
 	}

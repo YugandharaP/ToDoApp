@@ -19,6 +19,8 @@ import com.bridgelabz.todoapplication.userservice.model.UserDTO;
 import com.bridgelabz.todoapplication.userservice.service.IUserService;
 import com.bridgelabz.todoapplication.utilservice.dto.ResponseDTO;
 import com.bridgelabz.todoapplication.utilservice.exceptions.ToDoExceptions;
+import com.bridgelabz.todoapplication.utilservice.redisservice.IRedisRepository;
+
 
 /**
  * @author yuga
@@ -36,6 +38,9 @@ public class UserController {
 	
 	@Autowired
 	IUserService userService ;
+	
+	@Autowired
+	IRedisRepository redisRepository;
 	
 	/**<p><b>To take register url from view and perform operations</b></p>
 	 * @param registerdto
@@ -77,11 +82,13 @@ public class UserController {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@PostMapping("/login")
-	public ResponseEntity<ResponseDTO> loginUser(@RequestBody UserDTO userdto ,HttpServletResponse resp) throws ToDoExceptions, Exception  {
+	public ResponseEntity<ResponseDTO> loginUser(@RequestBody UserDTO userdto,HttpServletResponse resp ) throws ToDoExceptions, Exception  {
 			logger.info(REQUEST_ID);
 			String token=userService.login(userdto);
-			resp.setHeader("token",token);
 			logger.info("in user Login : "+token);
+			redisRepository.setToken(token);
+			logger.info("redis work");
+			resp.setHeader("token",token);
 			logger.info(RESPONSE_ID);
 			return new ResponseEntity(new ResponseDTO("you are successfully logged in",1),HttpStatus.OK);
 		
