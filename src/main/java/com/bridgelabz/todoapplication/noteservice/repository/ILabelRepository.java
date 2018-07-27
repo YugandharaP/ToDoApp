@@ -27,9 +27,11 @@ public interface ILabelRepository extends MongoRepository<Label, String> {
 	/**
 	 * @param userId
 	 * @param string
-	 * <p><b>To find by userId and name of label from not list</b></p>
+	 * <p><b>To find by userId and name of label from note list</b></p>
 	 * @return list
 	 */
 	Label findByUserIdAndLabelName(String userId, String string);
+
+	void deleteByLabelName(String labelName);
 
 }

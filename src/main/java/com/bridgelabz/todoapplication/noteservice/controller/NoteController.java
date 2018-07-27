@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bridgelabz.todoapplication.noteservice.model.Label;
 import com.bridgelabz.todoapplication.noteservice.model.Note;
 import com.bridgelabz.todoapplication.noteservice.model.NoteDTO;
 import com.bridgelabz.todoapplication.noteservice.service.INoteService;
@@ -75,7 +76,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.createNote(notedto, tokenFromHeader);
+		noteService.createNote(notedto, userId);
 		logger.info(RESPONSE_ID+request.getRequestURI());
 		return new ResponseEntity("Note successfully created.", HttpStatus.OK);
 	}
@@ -104,7 +105,7 @@ public class NoteController {
 				throw new ToDoExceptions("Token not matched");
 			}
 			
-			Note note = noteService.readNote(noteId, tokenFromHeader);
+			Note note = noteService.readNote(noteId, userId);
 			logger.info(RESPONSE_ID+request.getRequestURI());
 			return new ResponseEntity(note, HttpStatus.OK);
 	}
@@ -132,7 +133,7 @@ public class NoteController {
 				throw new ToDoExceptions("Token not matched");
 			}
 			
-			List<Note> note = noteService.readAllNotes(tokenFromHeader);
+			List<Note> note = noteService.readAllNotes(userId);
 			logger.info(RESPONSE_ID+request.getRequestURI());
 			return new ResponseEntity(note, HttpStatus.OK);
 	}
@@ -161,7 +162,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.updateNote(notedto, tokenFromHeader);
+		noteService.updateNote(notedto, userId);
 		logger.info(RESPONSE_ID+request.getRequestURI());
 		return new ResponseEntity("Note has been updated successfully", HttpStatus.OK);
 	}
@@ -176,7 +177,7 @@ public class NoteController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@PutMapping("/deletenote/{noteId}")
 	public ResponseEntity<ResponseDTO> deleteNote(HttpServletRequest request,@PathVariable(value="noteId") String noteId) throws ToDoExceptions {
-		logger.info(REQUEST_ID+request.getRequestURI());
+		logger.info(REQUEST_ID +request.getRequestURI());
 	
 		String tokenFromHeader = request.getHeader("token");
 		String userId= tokenProvider.parseJWT(tokenFromHeader);
@@ -190,8 +191,8 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		RestPreconditions.checkNotNull(noteService.deleteNote(noteId, tokenFromHeader),"Exception in delete ");
-		logger.info(RESPONSE_ID+request.getRequestURI());	
+		RestPreconditions.checkNotNull(noteService.deleteNote(noteId, userId),"Exception in delete ");
+		logger.info(RESPONSE_ID +request.getRequestURI());	
 		return new ResponseEntity("Note has been deleted successfully.", HttpStatus.OK);
 	}
 	/******************************************************************************************************/
@@ -220,7 +221,7 @@ public class NoteController {
 				throw new ToDoExceptions("Token not matched");
 			}
 			
-			noteService.deleteNoteFromTrash(noteId, tokenFromHeader);
+			noteService.deleteNoteFromTrash(noteId, userId);
 			logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been permanently deleted.", HttpStatus.OK);
 	}
@@ -249,10 +250,68 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.restoreNoteFromTrash(noteId, tokenFromHeader);
+		noteService.restoreNoteFromTrash(noteId, userId);
 			logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been restore.", HttpStatus.OK);
 	}
+	
+	
+	/**
+	 * @param request
+	 * @return list
+	 * <p><b>To take readAllNotesFromTrash url and also take token from view and perform operations</b></p>
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@GetMapping("/readallfromtrash")
+	public ResponseEntity<ResponseDTO> readAllFromTrash(HttpServletRequest request) throws ToDoExceptions {
+			logger.info(REQUEST_ID+request.getRequestURI());	
+			
+			String tokenFromHeader = request.getHeader("token");
+			String userId= tokenProvider.parseJWT(tokenFromHeader);
+			logger.info(tokenFromHeader);
+			String tokenFromRedis = iRedisRepository.getToken(userId);
+			logger.info(tokenFromRedis);
+			if(!tokenFromHeader.equals(tokenFromRedis))
+			{
+				logger.info("Token not matched");
+				
+				throw new ToDoExceptions("Token not matched");
+			}
+			
+			List<Note> note = noteService.readAllFromTrash(userId);
+			logger.info(RESPONSE_ID+request.getRequestURI());
+			return new ResponseEntity(note, HttpStatus.OK);
+	}
+	
+	/**
+	 * @param request
+	 * @return response
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@DeleteMapping("/emptytrash")
+	public ResponseEntity<ResponseDTO> emptyTrash(HttpServletRequest request) throws ToDoExceptions {
+			logger.info(REQUEST_ID+request.getRequestURI());	
+			
+			String tokenFromHeader = request.getHeader("token");
+			String userId= tokenProvider.parseJWT(tokenFromHeader);
+			logger.info(tokenFromHeader);
+			String tokenFromRedis = iRedisRepository.getToken(userId);
+			logger.info(tokenFromRedis);
+			if(!tokenFromHeader.equals(tokenFromRedis))
+			{
+				logger.info("Token not matched");
+				
+				throw new ToDoExceptions("Token not matched");
+			}
+			
+			noteService.emptyTrash(userId);
+			logger.info(RESPONSE_ID+request.getRequestURI());
+			return new ResponseEntity("Trash is empty", HttpStatus.OK);
+	}
+	
+	
 	/******************************************************************************************************/
 	/**
 	 * @param noteId
@@ -278,7 +337,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.pinNote(tokenFromHeader,noteId);
+		noteService.pinNote(userId,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
 	}
@@ -309,7 +368,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.unpinNote(tokenFromHeader,noteId);
+		noteService.unpinNote(userId,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note has been pined ", HttpStatus.OK);
 	}
@@ -322,8 +381,8 @@ public class NoteController {
 	 * @throws ToDoExceptions 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@PutMapping("/archivenote")
-	public ResponseEntity<ResponseDTO> archiveNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
+	@PutMapping("/archievenote")
+	public ResponseEntity<ResponseDTO> archieveNote(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
 		logger.info(REQUEST_ID+request.getRequestURI());	
 		
 		String tokenFromHeader = request.getHeader("token");
@@ -338,10 +397,67 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.archiveNote(request.getHeader("token"),noteId);
+		noteService.archieveNote(userId,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 			return new ResponseEntity("Note in archive", HttpStatus.OK);
 	}
+	
+	/**
+	 * @param request
+	 * @param noteId
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@PutMapping("/unarchievenote")
+	public ResponseEntity<ResponseDTO> removeNoteFromArchive(HttpServletRequest request,@RequestParam String noteId) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());	
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.removeNoteFromArcheive(userId,noteId);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+			return new ResponseEntity("Note in archive", HttpStatus.OK);
+	}
+	
+	
+	/**
+	 * @param request
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@PutMapping("/getallarchievenotes")
+	public ResponseEntity<ResponseDTO> getAllNotesFromArchive(HttpServletRequest request) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());	
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		List<Note>listOfNotesFromArcheieve = noteService.getAllNotesFromArchive(userId);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+			return new ResponseEntity(listOfNotesFromArcheieve, HttpStatus.OK);
+	}
+	
 	/******************************************************************************************************/
 	/**
 	 * @param request
@@ -368,7 +484,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.reminderNote(tokenFromHeader,noteId, reminderDate);
+		noteService.reminderNote(userId,noteId, reminderDate);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Reminder added on your note successfully", HttpStatus.OK);
 	}
@@ -397,9 +513,7 @@ public class NoteController {
 			
 			throw new ToDoExceptions("Token not matched");
 		}
-		
-		
-		noteService.removeReminder(tokenFromHeader,noteId);
+		noteService.removeReminder(userId,noteId);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Reminder added on your note successfully", HttpStatus.OK);
 	}
@@ -429,7 +543,7 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.addColor(tokenFromHeader, notedto);
+		noteService.addColor(userId, notedto);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("color added successfully", HttpStatus.OK);
 	}
@@ -439,7 +553,7 @@ public class NoteController {
 	/**
 	 * @param request
 	 * @param labelName
-	 * @return
+	 * @return response
 	 * @throws ToDoExceptions
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -459,11 +573,39 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.createLabels(tokenFromHeader, labelName);
+		noteService.createLabels(userId, labelName);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Label created successfully", HttpStatus.OK);
 	}
 /********************************************************************************************************/
+	/**
+	 * @param request
+	 * @param labelName
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@PutMapping("/deletelabel")
+	public ResponseEntity<ResponseDTO> deleteLabel(HttpServletRequest request,@RequestParam(value="Label")String labelName) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			
+			throw new ToDoExceptions("Token not matched");
+		}
+		
+		noteService.deleteLabel(userId, labelName);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+		return new ResponseEntity("Label deleted successfully", HttpStatus.OK);
+	}
+	
 	/**
 	 * @param request
 	 * @param noteId
@@ -489,11 +631,113 @@ public class NoteController {
 			throw new ToDoExceptions("Token not matched");
 		}
 		
-		noteService.addlabels(tokenFromHeader, noteId,labels);
+		noteService.addlabels(userId, noteId,labels);
 		logger.info(RESPONSE_ID+request.getRequestURI());	
 		return new ResponseEntity("Label added successfully", HttpStatus.OK);
 	}
 	
 	/******************************************************************************************************/
+	/**
+	 * @param request
+	 * @param currentLabelName
+	 * @param newLabelName
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@PutMapping("/editlabel")
+	public ResponseEntity<ResponseDTO> editLabel(HttpServletRequest request,
+			@RequestParam(value="Current Label Name")String currentLabelName ,
+			@RequestParam(value="New Label Name")String newLabelName) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			throw new ToDoExceptions("Token not matched");
+		}
+		noteService.editLabel(userId, currentLabelName,newLabelName);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+		return new ResponseEntity("Label Edited successfully", HttpStatus.OK);
+	}
+	
+	/******************************************************************************************************/
+	/**
+	 * @param request
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@GetMapping("/getalllabels")
+	public ResponseEntity<ResponseDTO> getAllLabels(HttpServletRequest request) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			throw new ToDoExceptions("Token not matched");
+		}
+		List<String>listOfLabels = noteService.getAllLabels(userId);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+		return new ResponseEntity(listOfLabels, HttpStatus.OK);
+	}
+	
+	/******************************************************************************************************/
+	/**
+	 * @param request
+	 * @param labelName
+	 * @return
+	 * @throws ToDoExceptions
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@GetMapping("/searchnotesbylabel")
+	public ResponseEntity<ResponseDTO> searchNotesByLabelName(HttpServletRequest request,@RequestParam (value="Label Name")String labelName) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			throw new ToDoExceptions("Token not matched");
+		}
+		List<Note>listOfNotes = noteService.searchNotesByLabelName(userId,labelName);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+		return new ResponseEntity(listOfNotes, HttpStatus.OK);
+	}
+	
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@GetMapping("/removelabelfromnote")
+	public ResponseEntity<ResponseDTO> removeLabelFromNote(HttpServletRequest request,@RequestParam(value="Note Id") String noteId , @RequestParam (value="Label Name")String labelName) throws ToDoExceptions {
+		logger.info(REQUEST_ID+request.getRequestURI());
+		
+		String tokenFromHeader = request.getHeader("token");
+		String userId= tokenProvider.parseJWT(tokenFromHeader);
+		logger.info(tokenFromHeader);
+		String tokenFromRedis = iRedisRepository.getToken(userId);
+		logger.info(tokenFromRedis);
+		if(!tokenFromHeader.equals(tokenFromRedis))
+		{
+			logger.info("Token not matched");
+			throw new ToDoExceptions("Token not matched");
+		}
+		noteService.removelabelfromnote(userId,noteId,labelName);
+		logger.info(RESPONSE_ID+request.getRequestURI());	
+		return new ResponseEntity("succussfully removed label from note ", HttpStatus.OK);
+	}
 	
 }

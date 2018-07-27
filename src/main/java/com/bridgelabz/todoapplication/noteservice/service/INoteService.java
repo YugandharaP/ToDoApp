@@ -3,6 +3,7 @@ package com.bridgelabz.todoapplication.noteservice.service;
 import java.text.ParseException;
 import java.util.List;
 
+import com.bridgelabz.todoapplication.noteservice.model.Label;
 import com.bridgelabz.todoapplication.noteservice.model.Note;
 import com.bridgelabz.todoapplication.noteservice.model.NoteDTO;
 import com.bridgelabz.todoapplication.utilservice.exceptions.ToDoExceptions;
@@ -25,7 +26,7 @@ public interface INoteService {
 	 * @throws ToDoExceptions 
 	 * @throws ParseException 
 	 */
-	void createNote(NoteDTO notedto, String token) throws ToDoExceptions, ParseException;
+	void createNote(NoteDTO notedto, String userId) throws ToDoExceptions, ParseException;
 
 	/**
 	 * @param noteId @param token
@@ -33,7 +34,7 @@ public interface INoteService {
 	 *  
 	 * @throws ToDoExceptions 
 	 */
-	String deleteNote(String noteId, String token) throws ToDoExceptions;
+	String deleteNote(String noteId, String userId) throws ToDoExceptions;
 
 	/**
 	 * @param token 
@@ -42,7 +43,7 @@ public interface INoteService {
 	 * <p><b>To read perticular  note from todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	Note readNote(String noteId, String token) throws ToDoExceptions;
+	Note readNote(String noteId, String userId) throws ToDoExceptions;
 	
 	
 	/**
@@ -51,7 +52,7 @@ public interface INoteService {
 	 * <p><b>To read all notes of perticular user id from todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	List<Note> readAllNotes(String token) throws ToDoExceptions;
+	List<Note> readAllNotes(String userId) throws ToDoExceptions;
 
 	/**
 	 * @param token
@@ -59,7 +60,7 @@ public interface INoteService {
 	 * <p><b>To update note of perticular note id from todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void updateNote(NoteDTO notedto, String token) throws ToDoExceptions;
+	void updateNote(NoteDTO notedto, String userId) throws ToDoExceptions;
 
 	/**
 	 * @param noteId
@@ -67,7 +68,7 @@ public interface INoteService {
 	 * <p><b>To delete note from trash</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void deleteNoteFromTrash(String noteId, String token) throws ToDoExceptions;
+	void deleteNoteFromTrash(String noteId, String userId) throws ToDoExceptions;
 
 	/**
 	 * @param noteId
@@ -76,7 +77,7 @@ public interface INoteService {
 	 * @param reminderDate 
 	 * @throws ToDoExceptions 
 	 */
-	void restoreNoteFromTrash(String noteId, String token) throws ToDoExceptions;
+	void restoreNoteFromTrash(String noteId, String userId) throws ToDoExceptions;
 
 	/**
 	 * @param token
@@ -84,15 +85,31 @@ public interface INoteService {
 	 * <p><b>To pin note in todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void pinNote(String token, String noteId) throws ToDoExceptions;
+	void pinNote(String userId, String noteId) throws ToDoExceptions;
+	
+	/**
+	 * @param header
+	 * @param noteId
+	 *<p><b>To unpin note in todo application</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void unpinNote(String userId, String noteId) throws ToDoExceptions;
 
+
+	/**
+	 * @param tokenFromHeader
+	 * @return list
+	 * @throws ToDoExceptions 
+	 */
+	List<Note> readAllFromTrash(String userId) throws ToDoExceptions;
+	
 	/**
 	 * @param token
 	 * @param noteId
 	 * <p><b>To archive note in todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void archiveNote(String token, String noteId) throws ToDoExceptions;
+	void archieveNote(String userId, String noteId) throws ToDoExceptions;
 
 	/**
 	 * @param token
@@ -101,29 +118,22 @@ public interface INoteService {
 	 * @throws ToDoExceptions 
 	 * @throws ParseException 
 	 */
-	void reminderNote(String token, String noteId, String reminderDate) throws ToDoExceptions, ParseException;
+	void reminderNote(String userId, String noteId, String reminderDate) throws ToDoExceptions, ParseException;
 
-	/**
-	 * @param header
-	 * @param noteId 
-	 * <p><b>To added labels on note in todo application</b></p>
-	 * @throws ToDoExceptions 
-	 */
-	void addlabels(String header, String noteId, List<String> labels) throws ToDoExceptions;
 	/**
 	 * @param header
 	 * @param noteId
 	 * <p><b>To remove reminder from particular note in todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void removeReminder(String token, String noteId) throws ToDoExceptions;
+	void removeReminder(String userId, String noteId) throws ToDoExceptions;
 	/**
 	 * @param header
 	 * @param notedto
 	 *  <p><b>To add color for particular note in todo application</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void addColor(String header, NoteDTO notedto) throws ToDoExceptions;
+	void addColor(String userId, NoteDTO notedto) throws ToDoExceptions;
 
 	/**
 	 * @param header
@@ -132,17 +142,85 @@ public interface INoteService {
 	 * @return 
 	 * @throws ToDoExceptions 
 	 */
-	void createLabels(String token, String lableName) throws ToDoExceptions;
+	void createLabels(String userId, String lableName) throws ToDoExceptions;
+
+
 
 	/**
-	 * @param header
-	 * @param noteId
-	 *<p><b>To unpin note in todo application</b></p>
+	 * @param userId
+	 * @param labelName
+	 * <p><b>To delete label from todo application of particular user</b></p>
 	 * @throws ToDoExceptions 
 	 */
-	void unpinNote(String header, String noteId) throws ToDoExceptions;
+	void deleteLabel(String userId, String labelName) throws ToDoExceptions;
+	
+	/**
+	 * @param header
+	 * @param noteId 
+	 * <p><b>To added labels on note in todo application</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void addlabels(String userId, String noteId, List<String> labels) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 * @param currentLabelName
+	 * @param newLabelName
+	 *  <p><b>To edit the particular label on note  and label repository in todo application</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void editLabel(String userId, String currentLabelName, String newLabelName) throws ToDoExceptions;
+
+	
+	/**
+	 * @param userId
+	 *  <p><b>To return list of labels of the intended user</b></p>
+	 * @return list of labels
+	 * @throws ToDoExceptions 
+	 */
+	List<String> getAllLabels(String userId) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 *  <p><b>To return list of notes based on label name</b></p>
+	 * @return list of notes
+	 * @throws ToDoExceptions 
+	 */
+	List<Note> searchNotesByLabelName(String userId,String labelName) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 * @param noteId
+	 * <p><b>remove note from archieve</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void removeNoteFromArcheive(String userId, String noteId) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 * <p><b>list out all notes which is in archieve</b></p>
+	 * @return list of notes is in archieve
+	 * @throws ToDoExceptions 
+	 */
+	List<Note> getAllNotesFromArchive(String userId) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 * <p><b>remove all notes from trash</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void emptyTrash(String userId) throws ToDoExceptions;
+
+	/**
+	 * @param userId
+	 * @param noteId
+	 * @param labelName
+	 * <p><b>remove label from</b></p>
+	 * @throws ToDoExceptions 
+	 */
+	void removelabelfromnote(String userId, String noteId, String labelName) throws ToDoExceptions;
 
 	
 	
-
+	
 }

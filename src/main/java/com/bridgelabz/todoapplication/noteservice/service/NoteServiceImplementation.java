@@ -59,28 +59,17 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ParseException
 	 */
 	@Override
-	public void createNote(NoteDTO notedto, String token) throws ToDoExceptions, ParseException {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
-		RestPreconditions.checkNotNull(notedto.getNoteId(), "NULLException: noteId must not be null");
+	public void createNote(NoteDTO notedto, String userId) throws ToDoExceptions, ParseException {
 		RestPreconditions.checkNotNull(notedto.getTitle(), "Note title is null");
 		RestPreconditions.checkNotNull(notedto.getDiscription(), "note discription is null");
 
-		String userId = tokenProvider.parseJWT(token);
-
-		/*
-		 * LOGGER.info("header token : " + token); String userToken =
-		 * redisService.getToken("userId");
-		 * 
-		 * note.setUserId(tokenProvider.parseJWT(userToken));
-		 * LOGGER.info("header token : " + userToken);
-		 */
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
-		RestPreconditions.checkNotNull(noteRepository.existsById(notedto.getNoteId()),
-				"ConflictException : Note Id Conflict.Note id allready present");
-		Date date = new SimpleDateFormat("dd/MM/yyyy").parse(notedto.getRemainder());
-		RestPreconditions.checkArgument(date.before(new Date()), "DateFormatException: Not valid Date");
 		Note note = modelMapper.map(notedto, Note.class);
-		note.setReminder(date);
+		if (notedto.getRemainder() != "" && notedto.getRemainder() != null) {
+			Date date = new SimpleDateFormat("dd/MM/yyyy").parse(notedto.getRemainder());
+			RestPreconditions.checkArgument(date.before(new Date()), "DateFormatException: Not valid Date");
+			note.setReminder(date);
+		}
 		note.setUserId(userId);
 		note.setCreatedDate(new Date());
 		note.setLastModifiedDate(new Date());
@@ -97,10 +86,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public String deleteNote(String noteId, String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public String deleteNote(String noteId, String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -123,10 +110,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public Note readNote(String noteId, String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public Note readNote(String noteId, String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -147,9 +132,7 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public List<Note> readAllNotes(String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
-		String userId = tokenProvider.parseJWT(token);
+	public List<Note> readAllNotes(String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
 
 		List<Note> noteList = noteRepository.findAllByUserId(userId);
@@ -172,10 +155,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public void updateNote(NoteDTO notedto, String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void updateNote(NoteDTO notedto, String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(notedto, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(notedto.getNoteId());
@@ -205,10 +186,8 @@ public class NoteServiceImplementation implements INoteService {
 	 **/
 
 	@Override
-	public void deleteNoteFromTrash(String noteId, String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException : token is null");
+	public void deleteNoteFromTrash(String noteId, String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException : noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
 		RestPreconditions.checkArgument(!optionalNote.isPresent(),
@@ -231,10 +210,8 @@ public class NoteServiceImplementation implements INoteService {
 	 **/
 
 	@Override
-	public void restoreNoteFromTrash(String noteId, String token) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void restoreNoteFromTrash(String noteId, String userId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -258,10 +235,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 **/
 	@Override
-	public void pinNote(String token, String noteId) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void pinNote(String userId, String noteId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -281,16 +256,12 @@ public class NoteServiceImplementation implements INoteService {
 	/**
 	 * @param token
 	 * @param noteId
-	 *            <p>
-	 *            <b>To unpin the particular note</b>
-	 *            </p>
+	 * <p> <b>To unpin the particular note</b> </p>
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public void unpinNote(String token, String noteId) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void unpinNote(String userId, String noteId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -316,10 +287,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public void archiveNote(String token, String noteId) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void archieveNote(String userId, String noteId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -336,23 +305,55 @@ public class NoteServiceImplementation implements INoteService {
 	}
 
 	/**
+	 * @throws ToDoExceptions
+	 * 
+	 */
+	@Override
+	public void removeNoteFromArcheive(String userId, String noteId) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
+
+		Optional<Note> optionalNote = noteRepository.findById(noteId);
+		RestPreconditions.checkArgument(!optionalNote.isPresent(),
+				"NULLPointerException: Note id not present in database");
+
+		RestPreconditions.checkArgument(optionalNote.get().isTrashStatus(), "DatabaseException : Note in trash");
+
+		Note note = optionalNote.get();
+		RestPreconditions.checkArgument(!note.isArchiveNOte(), "DatabaseException: Note not present in archive.");
+
+		note.setArchiveNOte(false);
+		noteRepository.save(note);
+	}
+
+	/**
+	 **/
+	@Override
+	public List<Note> getAllNotesFromArchive(String userId) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		List<Note> noteList = noteRepository.findAllByUserId(userId);
+		List<Note> finalNoteList = new ArrayList<Note>();
+		for (Note note : noteList) {
+			if (note.isArchiveNOte())
+				finalNoteList.add(note);
+		}
+		RestPreconditions.checkNotNull(finalNoteList, "NULLPointerException : No note present in database !");
+		return finalNoteList;
+	}
+	/**
 	 * @param token
 	 * @param noteId
 	 * @param reminderDate
-	 *            <p>
-	 *            To set reminder date for particular note
-	 *            </p>
+	 * <p>To set reminder date for particular note</p>
 	 * @throws ToDoExceptions
 	 * @throws ParseException
 	 */
 
 	@Override
-	public void reminderNote(String token, String noteId, String reminderDate) throws ToDoExceptions, ParseException {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void reminderNote(String userId, String noteId, String reminderDate) throws ToDoExceptions, ParseException {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
 		RestPreconditions.checkNotNull(reminderDate, "NULLPointerException :date is null");
 
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
@@ -369,10 +370,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * 
 	 */
 	@Override
-	public void removeReminder(String token, String noteId) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void removeReminder(String userId, String noteId) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
 		RestPreconditions.checkArgument(!optionalNote.isPresent(),
@@ -386,10 +385,8 @@ public class NoteServiceImplementation implements INoteService {
 	 * 
 	 */
 	@Override
-	public void createLabels(String token, String lableName) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
+	public void createLabels(String userId, String lableName) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(lableName, "NULLPointerException :labelName is null");
-		String userId = tokenProvider.parseJWT(token);
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 		Optional<Label> optionalLabel = labelRepository.findByLabelName(lableName);
 
@@ -404,9 +401,7 @@ public class NoteServiceImplementation implements INoteService {
 	}
 
 	@Override
-	public void addColor(String token, NoteDTO notedto) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
-		String userId = tokenProvider.parseJWT(token);
+	public void addColor(String userId, NoteDTO notedto) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 		RestPreconditions.checkNotNull(notedto.getNoteId(), "NULLPointerException :Note id not present in database");
 		RestPreconditions.checkNotNull(notedto.getColor(), "NULLPointerException :colorCode field is null");
@@ -422,10 +417,7 @@ public class NoteServiceImplementation implements INoteService {
 	 * @throws ToDoExceptions
 	 */
 	@Override
-	public void addlabels(String token, String noteId, List<String> labelNames) throws ToDoExceptions {
-		RestPreconditions.checkNotNull(token, "NULLPointerException :token is null");
-		RestPreconditions.checkNotNull(noteId, "NULLPointerException :noteId is null");
-		String userId = tokenProvider.parseJWT(token);
+	public void addlabels(String userId, String noteId, List<String> labelNames) throws ToDoExceptions {
 		RestPreconditions.checkNotNull(userId, "NULLPointerException :User id not present in database");
 		Optional<Note> optionalNote = noteRepository.findById(noteId);
 		RestPreconditions.checkArgument(!optionalNote.isPresent(),
@@ -435,6 +427,7 @@ public class NoteServiceImplementation implements INoteService {
 			if (labelOfUser == null) {
 				Label label = new Label();
 				label.setUserId(userId);
+				label.setLabelId(label.getLabelId());
 				label.setLabelName(labelNames.get(i));
 				labelRepository.insert(label);
 				List<Label> labelListInNote = optionalNote.get().getListOfLabels();
@@ -468,4 +461,176 @@ public class NoteServiceImplementation implements INoteService {
 			}
 		}
 	}
-  }
+
+	/**
+	 * @param userId-String
+	 *            type of user id which extract from token
+	 *            <p>
+	 *            <b>To read all notes from trash</b>
+	 *            </p>
+	 * @throws ToDoException
+	 **/
+	@Override
+	public List<Note> readAllFromTrash(String userId) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+
+		List<Note> noteList = noteRepository.findAllByUserId(userId);
+		RestPreconditions.checkNotNull(noteList, "NULLPointerException : No note present in database !");
+
+		List<Note> finalNoteList = new ArrayList<Note>();
+		for (Note note : noteList) {
+			if (note.isTrashStatus())
+				finalNoteList.add(note);
+		}
+		RestPreconditions.checkNotNull(finalNoteList, "NULLPointerException : No note present in Trash !");
+		return finalNoteList;
+	}
+	
+	/**
+	 * @param userId-String type of user id which extract from token
+	 * <p><b>To empty all notes from trash</b></p>
+	 * @throws ToDoExceptions 
+	 **/
+	@Override
+	public void emptyTrash(String userId) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+
+		List<Note> noteList = noteRepository.findAllByUserId(userId);
+		RestPreconditions.checkNotNull(noteList, "NULLPointerException : No note present in Trash !");
+		for (int i=0;i<noteList.size();i++) {
+			if (noteList.get(i).isTrashStatus())
+			noteRepository.delete(noteList.get(i));	
+		}
+	}
+	/**
+	 * **/
+	@Override
+	public void deleteLabel(String userId, String labelName) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		RestPreconditions.checkNotNull(labelName, "NoValuePresent : Label name not entered ");
+		Optional<Label> labelFromRepository = labelRepository.findByLabelName(labelName);
+		RestPreconditions.checkArgument(!labelFromRepository.isPresent(),
+				"NULLPointerException :label name not present in database");
+		Label label = labelFromRepository.get();
+		labelRepository.deleteByLabelName(label.getLabelName());
+		LOGGER.info("label deleted from label repository");
+		List<Note> listOfNotes = noteRepository.findAllByUserId(userId);
+		if (listOfNotes.size() == 0) {
+			throw new ToDoExceptions("No notes found");
+		}
+		for (int i = 0; i < listOfNotes.size(); i++) {
+			if (listOfNotes.get(i).getListOfLabels() != null) {
+				for (int j = 0; j < listOfNotes.get(i).getListOfLabels().size(); j++) {
+					if (listOfNotes.get(i).getListOfLabels().get(j).getLabelName().equals(labelName)) {
+						listOfNotes.get(i).getListOfLabels().remove(j);
+						LOGGER.info("delete label from list");
+						noteRepository.save(listOfNotes.get(i));
+						LOGGER.info("save updated note");
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * @throws ToDoExceptions
+	 **/
+	@Override
+	public void editLabel(String userId, String currentLabelName, String newLabelName) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		RestPreconditions.checkNotNull(currentLabelName, "NoValuePresent : Current Label name not entered ");
+		RestPreconditions.checkNotNull(newLabelName, "NoValuePresent : New Label name not entered ");
+		Optional<Label> labelFromRepository = labelRepository.findByLabelName(currentLabelName);
+		RestPreconditions.checkArgument(!labelFromRepository.isPresent(),
+				"NULLPointerException :label name not present in database");
+		labelFromRepository.get().setLabelName(newLabelName);
+		labelRepository.save(labelFromRepository.get());
+		LOGGER.info("label edited from label repository");
+		List<Note> listOfNotes = noteRepository.findAllByUserId(userId);
+		if (listOfNotes.size() == 0) {
+			throw new ToDoExceptions("No notes found");
+		}
+		for (int i = 0; i < listOfNotes.size(); i++) {
+			if (listOfNotes.get(i).getListOfLabels() != null) {
+				for (int j = 0; j < listOfNotes.get(i).getListOfLabels().size(); j++) {
+					if (listOfNotes.get(i).getListOfLabels().get(j).getLabelName().equals(currentLabelName)) {
+						listOfNotes.get(i).getListOfLabels().get(j).setLabelName(newLabelName);
+						LOGGER.info("edit label from list");
+						noteRepository.save(listOfNotes.get(i));
+						LOGGER.info("save edited note");
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * @throws ToDoExceptions
+	 **/
+	@Override
+	public List<String> getAllLabels(String userId) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		List<Note> listOfNotes = noteRepository.findAllByUserId(userId);
+		if (listOfNotes.size() == 0) {
+			throw new ToDoExceptions("No notes found");
+		}
+		List<String> finalLabelList = new ArrayList<String>();
+		for (int i = 0; i < listOfNotes.size(); i++) {
+			if (listOfNotes.get(i).getListOfLabels() != null) {
+				for (int j = 0; j < listOfNotes.get(i).getListOfLabels().size(); j++) {
+					finalLabelList.add(listOfNotes.get(i).getListOfLabels().get(j).getLabelName());
+				}
+			}
+		}
+		return finalLabelList;
+	}
+
+	/**
+	 * @throws ToDoExceptions
+	 **/
+	@Override
+	public List<Note> searchNotesByLabelName(String userId, String labelName) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		List<Note> listOfNotes = noteRepository.findAllByUserId(userId);
+		if (listOfNotes.size() == 0) {
+			throw new ToDoExceptions("No notes found");
+		}
+		List<Note> finalNotesList = new ArrayList<Note>();
+		for (int i = 0; i < listOfNotes.size(); i++) {
+			if (listOfNotes.get(i).getListOfLabels() != null) {
+				for (int j = 0; j < listOfNotes.get(i).getListOfLabels().size(); j++) {
+					if (listOfNotes.get(i).getListOfLabels().get(j).getLabelName().equals(labelName)) {
+						finalNotesList.add(listOfNotes.get(i));
+					}
+				}
+			}
+		}
+		return finalNotesList;
+	}
+
+	/**
+	 * @throws ToDoExceptions 
+	 * */
+	@Override
+	public void removelabelfromnote(String userId, String noteId, String labelName) throws ToDoExceptions {
+		RestPreconditions.checkNotNull(userId, "NoValuePresent : Note id should not be null");
+		RestPreconditions.checkNotNull(userId, "NULLPointerException : User id not present in database");
+		Optional<Note> optionalNote = noteRepository.findById(noteId);
+		RestPreconditions.checkArgument(!optionalNote.isPresent(),"NULLPointerException: Note id not present in database");
+		
+		if(optionalNote.get().getListOfLabels().size() == 0)
+		{
+			throw new ToDoExceptions("Label not found!");
+		}
+		for(int i=0;i<optionalNote.get().getListOfLabels().size();i++)
+		{
+			if(optionalNote.get().getListOfLabels().get(i).getLabelName().equals(labelName))
+			{
+				optionalNote.get().getListOfLabels().remove(i);
+			}
+		}
+	
+		noteRepository.save(optionalNote.get());
+	}
+
+}

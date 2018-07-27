@@ -20,6 +20,7 @@ import com.bridgelabz.todoapplication.utilservice.exceptions.ToDoExceptions;
 import com.bridgelabz.todoapplication.utilservice.mailservice.IEmailService;
 import com.bridgelabz.todoapplication.utilservice.mailservice.IMailProducer;
 import com.bridgelabz.todoapplication.utilservice.mapperservice.ModelMapperService;
+import com.bridgelabz.todoapplication.utilservice.redisservice.IRedisRepository;
 
 /**
  * @author yuga
@@ -46,16 +47,15 @@ public class UserServiceImplementation implements IUserService {
 	
 	@Autowired
 	ModelMapperService modelMapper;
+	
+	@Autowired
+	IRedisRepository redisRepository;
 
 	/**
 	 * @param logindto
-	 *            <p>
-	 * 			<b>To check conditon(check email id and password) when user want's
-	 *            to login</b>
-	 *            </p>
+	 * <p><b>To check conditon(check email id and password) when user want's to login</b>  </p>
 	 * @throws ToDoExceptions
-	 * @exception throws
-	 *                login exception
+	 * @exception throws ToDoException exception
 	 */
 	@Override
 	public String login(UserDTO userdto) throws ToDoExceptions, Exception {
@@ -71,20 +71,25 @@ public class UserServiceImplementation implements IUserService {
 		}
 			User user = optionalUser.get();
 			JwtTokenProvider token = new JwtTokenProvider();
-			String validToken = token.generator(user);
-			LOGGER.info("token : " + validToken);
-			return validToken;
+			String tokenGenerated = token.generator(user);
+			LOGGER.info("token : " + tokenGenerated);
+			String userId= user.getId();
+			String tokenFromRedis = redisRepository.getToken(userId);
+			RestPreconditions.checkNotNull(tokenFromRedis, "AuthenticationException : UnAuthorised user ! ");
+			LOGGER.info("token from Redis"+tokenFromRedis);
+			String userIdfromRedis = token.parseJWT(tokenFromRedis);
+			if(userId.equals(userIdfromRedis)) {
+				return tokenGenerated;
+			}
+			throw new ToDoExceptions("UnAuthorised user !");
 	}
 
 	/**
 	 * @param registerdto
-	 *            <p>
-	 * 			<b>To check whether user is already present in database or not</b>
-	 *            </p>
+	 * <p><b>To check whether user is already present in database or not</b></p>
 	 * @throws RegistrationExceptions
 	 * @throws MessagingException
-	 * @exception throws
-	 *                registration exception
+	 * @throws ToDOException
 	 */
 	@Override
 	public void register(UserDTO userdto) throws ToDoExceptions, MessagingException {
@@ -104,11 +109,8 @@ public class UserServiceImplementation implements IUserService {
 	}
 
 	/**
-	 * <p>
-	 * <b>To send mail with activation link</b>
-	 * </p>
-	 * 
 	 * @param registerdto
+	 * <p><b>To send mail with activation link</b></p>
 	 * @return boolean value
 	 * @throws MessagingException
 	 */
@@ -117,6 +119,10 @@ public class UserServiceImplementation implements IUserService {
 		String validToken = token.generator(user);
 		RestPreconditions.checkNotNull(validToken, "Token not generated");
 		LOGGER.info("Your token is : " + validToken);
+		
+		redisRepository.setToken(validToken);
+		LOGGER.info("Token set into redis repository");
+		
 		Email email = new Email();
 		email.setTo(user.getEmail());
 		email.setSubject("Bellow activation Link");
@@ -125,9 +131,8 @@ public class UserServiceImplementation implements IUserService {
 	}
 
 	/**
-	 * <p><b>To activate user by setting status true into the database</b></p>
-	 * 
 	 * @param registerdto
+	 * <p><b>To activate user by setting status true into the database</b></p>
 	 * @throws ToDoExceptions 
 	 * @throws RegistrationExceptions
 	 */
@@ -144,8 +149,8 @@ public class UserServiceImplementation implements IUserService {
 
 	/**
 	 * @param String emailId
+	 * <p> <b>Forgot password operations</b> </p>
 	 * @throws ToDoExceptionsng
-	 * <p> <b></b> </p>
 	 * @throws MessagingException
 	 */
 	@Override
